@@ -4,6 +4,10 @@
  */
 
 // ============== STATE ==============
+let accounts = [];
+let activeAccountId = null;
+
+// Active Account Pointers
 let balance = 0;
 let streak = 0;
 let lastLoginDate = null;
@@ -13,6 +17,7 @@ let goals = [];
 // Header
 const balanceEl = document.getElementById('total-balance');
 const streakEl = document.getElementById('streak-counter');
+const settingsBtn = document.getElementById('settings-btn');
 
 // Main Container
 const goalsListEl = document.getElementById('goals-list');
@@ -36,6 +41,13 @@ const goalEmojiInput = document.getElementById('goal-emoji');
 const btnSaveGoal = document.getElementById('save-goal');
 const btnCancelGoal = document.getElementById('cancel-goal');
 
+// Settings Modal
+const settingsModal = document.getElementById('settings-modal');
+const accountSelector = document.getElementById('account-selector');
+const btnNewAccount = document.getElementById('new-account-btn');
+const btnDeleteData = document.getElementById('delete-data-btn');
+const btnCloseSettings = document.getElementById('close-settings');
+
 // Session Flow State
 let currentAmount = '0';
 let activeGoalId = null;
@@ -51,30 +63,52 @@ function init() {
 }
 
 function loadData() {
-    const data = JSON.parse(localStorage.getItem('pocketGoalsData'));
-    if (data) {
-        balance = data.balance || 0;
-        streak = data.streak || 0;
-        lastLoginDate = data.lastLoginDate || null;
-        goals = data.goals || [];
+    const data = JSON.parse(localStorage.getItem('pocketGoalsAccountsData'));
+    if (data && data.accounts && data.accounts.length > 0) {
+        accounts = data.accounts;
+        activeAccountId = data.activeAccountId || accounts[0].id;
     } else {
-        // Mock first-time data to demonstrate design
-        goals = [
-            { id: 1, name: 'Viaje a Tokio', target: 3500, current: 800, emoji: '✈️' },
-            { id: 2, name: 'Setup Gamer', target: 1200, current: 1200, emoji: '🖥️' }
-        ];
-        balance = 2000;
-        checkStreak(); // Will initialize to 1
-        saveData();
+        // Migration from previous version or First time
+        const legacyData = JSON.parse(localStorage.getItem('pocketGoalsData'));
+        accounts = [{
+            id: 'account_' + Date.now(),
+            name: 'Principal',
+            balance: legacyData ? legacyData.balance : 0,
+            streak: legacyData ? legacyData.streak : 0,
+            lastLoginDate: legacyData ? legacyData.lastLoginDate : null,
+            goals: legacyData ? legacyData.goals : []
+        }];
+        activeAccountId = accounts[0].id;
+        if (legacyData) {
+            localStorage.removeItem('pocketGoalsData');
+        }
+    }
+
+    syncActiveAccountState();
+}
+
+function syncActiveAccountState() {
+    const activeAccount = accounts.find(a => a.id === activeAccountId);
+    if (activeAccount) {
+        balance = activeAccount.balance || 0;
+        streak = activeAccount.streak || 0;
+        lastLoginDate = activeAccount.lastLoginDate || null;
+        goals = activeAccount.goals || [];
     }
 }
 
 function saveData() {
-    localStorage.setItem('pocketGoalsData', JSON.stringify({
-        balance,
-        streak,
-        lastLoginDate,
-        goals
+    const activeAccount = accounts.find(a => a.id === activeAccountId);
+    if (activeAccount) {
+        activeAccount.balance = balance;
+        activeAccount.streak = streak;
+        activeAccount.lastLoginDate = lastLoginDate;
+        activeAccount.goals = goals;
+    }
+
+    localStorage.setItem('pocketGoalsAccountsData', JSON.stringify({
+        accounts,
+        activeAccountId
     }));
 }
 
@@ -85,8 +119,8 @@ function checkStreak() {
             const last = new Date(lastLoginDate);
             const now = new Date();
             const diffTime = Math.abs(now - last);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
             if (diffDays === 1) {
                 streak++; // Consecutive day
             } else if (diffDays > 1) {
@@ -108,7 +142,7 @@ function updateHeader() {
 
 function renderGoals() {
     goalsListEl.innerHTML = '';
-    
+
     if (goals.length === 0) {
         goalsListEl.innerHTML = `
             <div style="text-align: center; color: var(--text-muted); margin-top: 40px; font-size: 0.95rem;">
@@ -119,20 +153,20 @@ function renderGoals() {
     }
 
     goals.forEach((goal, index) => {
-        const percent = Math.min((goal.current / goal.target) * 100, 100);
+        const percent = Math.min((goal.current ? (goal.current / goal.target) * 100 : 0), 100);
         const isComplete = percent >= 100;
-        
+
         const card = document.createElement('div');
         card.className = 'goal-card glass-card';
         card.style.animationDelay = `${index * 0.1}s`;
-        
+
         card.innerHTML = `
             <div class="goal-header">
                 <div class="goal-info">
                     <div class="goal-emoji">${goal.emoji || '🎯'}</div>
                     <div>
                         <div class="goal-name">${goal.name}</div>
-                        <div class="goal-amounts">$${goal.current.toLocaleString('en-US')} / $${goal.target.toLocaleString('en-US')}</div>
+                        <div class="goal-amounts">$${(goal.current || 0).toLocaleString('en-US')} / $${goal.target.toLocaleString('en-US')}</div>
                     </div>
                 </div>
                 <div class="goal-controls">
@@ -145,7 +179,6 @@ function renderGoals() {
             </div>
         `;
 
-        // Attach listeners directly
         const btnSub = card.querySelector('.control-btn.sub');
         const btnAdd = card.querySelector('.control-btn.add');
 
@@ -156,10 +189,59 @@ function renderGoals() {
     });
 }
 
+function renderAccountSelector() {
+    accountSelector.innerHTML = '';
+    accounts.forEach(acc => {
+        const option = document.createElement('option');
+        option.value = acc.id;
+        option.textContent = acc.name;
+        if (acc.id === activeAccountId) option.selected = true;
+        accountSelector.appendChild(option);
+    });
+}
+
+// ============== ACCOUNT ACTIONS ==============
+function switchAccount(id) {
+    activeAccountId = id;
+    syncActiveAccountState();
+    checkStreak();
+    updateHeader();
+    renderGoals();
+    saveData();
+}
+
+function createNewAccount(name) {
+    const newId = 'account_' + Date.now();
+    accounts.push({
+        id: newId,
+        name: name,
+        balance: 0,
+        streak: 0,
+        lastLoginDate: null,
+        goals: []
+    });
+    activeAccountId = newId;
+    syncActiveAccountState();
+    checkStreak();
+    saveData();
+    renderAccountSelector();
+    updateHeader();
+    renderGoals();
+}
+
+function deleteCurrentAccountData() {
+    goals = [];
+    balance = 0;
+    streak = 0;
+    lastLoginDate = null;
+    saveData();
+    updateHeader();
+    renderGoals();
+}
+
 // ============== HAPTICS ==============
 function vibrate(ms = 50) {
     if (navigator.vibrate) {
-        // Haptic feedback for interactions
         navigator.vibrate(ms);
     }
 }
@@ -171,12 +253,11 @@ function openNumpad(id, action) {
     activeAction = action;
     currentAmount = '0';
     updateNumpadDisplay();
-    
+
     const goal = goals.find(g => g.id === id);
     const actionText = action === 'add' ? 'Añadir a' : 'Restar de';
     numpadTitle.textContent = `${actionText} ${goal.name}`;
-    
-    // Theming according to action
+
     if (action === 'add') {
         numpadDisplay.classList.remove('subtext');
         btnConfirm.textContent = 'Añadir';
@@ -186,13 +267,12 @@ function openNumpad(id, action) {
         btnConfirm.textContent = 'Extraer';
         btnConfirm.classList.add('danger');
     }
-    
+
     numpadModal.classList.add('active');
 }
 
 function updateNumpadDisplay() {
     const num = parseInt(currentAmount, 10) || 0;
-    // We visually display minus sign if action is subtract but number > 0
     const sign = (activeAction === 'sub' && num > 0) ? '-' : '';
     numpadDisplay.textContent = `${sign}$${num.toLocaleString('en-US')}`;
 }
@@ -202,7 +282,7 @@ function handleNumpadInput(val) {
         if (val !== '0') {
             currentAmount = val;
         }
-    } else if (currentAmount.length < 8) { // max 8 digits logic
+    } else if (currentAmount.length < 8) {
         currentAmount += val;
     }
     updateNumpadDisplay();
@@ -211,9 +291,9 @@ function handleNumpadInput(val) {
 function closeModals() {
     numpadModal.classList.remove('active');
     newGoalModal.classList.remove('active');
+    settingsModal.classList.remove('active');
     activeGoalId = null;
-    
-    // Defocus inputs if keyboard was up
+
     goalNameInput.blur();
     goalTargetInput.blur();
     goalEmojiInput.blur();
@@ -221,15 +301,48 @@ function closeModals() {
 
 // ============== EVENT LISTENERS ==============
 function setupEventListeners() {
+    // Settings logic
+    settingsBtn.addEventListener('click', () => {
+        vibrate();
+        renderAccountSelector();
+        settingsModal.classList.add('active');
+    });
+
+    btnCloseSettings.addEventListener('click', () => {
+        vibrate();
+        closeModals();
+    });
+
+    accountSelector.addEventListener('change', (e) => {
+        vibrate(30);
+        switchAccount(e.target.value);
+    });
+
+    btnNewAccount.addEventListener('click', () => {
+        vibrate(30);
+        const name = prompt("Nombre de la nueva cuenta:");
+        if (name && name.trim()) {
+            createNewAccount(name.trim());
+        }
+    });
+
+    btnDeleteData.addEventListener('click', () => {
+        vibrate([60, 60]);
+        const activeName = accounts.find(a => a.id === activeAccountId).name;
+        if (confirm("¿Estás seguro de que quieres borrar TODOS LOS DATOS de tu cuenta '" + activeName + "'? (Se perderá el saldo y metas)")) {
+            deleteCurrentAccountData();
+            closeModals();
+        }
+    });
+
     // Numpad Numbers
     keys.forEach(key => {
         key.addEventListener('click', (e) => {
-            vibrate(30); // Lighter vibrate for num pad
+            vibrate(30);
             handleNumpadInput(e.target.textContent);
         });
     });
 
-    // Backspace
     btnBack.addEventListener('click', () => {
         vibrate(30);
         if (currentAmount.length > 1) {
@@ -240,7 +353,6 @@ function setupEventListeners() {
         updateNumpadDisplay();
     });
 
-    // Clear All
     btnClear.addEventListener('click', () => {
         vibrate(30);
         currentAmount = '0';
@@ -252,11 +364,10 @@ function setupEventListeners() {
         closeModals();
     });
 
-    // Numpad Confirm
     btnConfirm.addEventListener('click', () => {
-        vibrate(60); // Stronger vibrate for confirmation
+        vibrate(60);
         const amount = parseInt(currentAmount, 10);
-        
+
         if (amount > 0 && activeGoalId !== null) {
             const goal = goals.find(g => g.id === activeGoalId);
             if (activeAction === 'add') {
@@ -273,7 +384,6 @@ function setupEventListeners() {
         closeModals();
     });
 
-    // Add User Goal Action
     addGoalBtn.addEventListener('click', () => {
         vibrate();
         newGoalModal.classList.add('active');
@@ -282,7 +392,6 @@ function setupEventListeners() {
     btnCancelGoal.addEventListener('click', () => {
         vibrate();
         closeModals();
-        // clear forms
         goalNameInput.value = '';
         goalTargetInput.value = '';
         goalEmojiInput.value = '';
@@ -306,18 +415,15 @@ function setupEventListeners() {
             saveData();
             renderGoals();
             closeModals();
-            
-            // Empty
+
             goalNameInput.value = '';
             goalTargetInput.value = '';
             goalEmojiInput.value = '';
         } else {
-            // Give a little buzz alert if input fails
             vibrate([50, 50, 50]);
         }
     });
 
-    // Close Modals when touching overlay outside the container
     document.querySelectorAll('.numpad-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -327,7 +433,6 @@ function setupEventListeners() {
     });
 }
 
-// Put it all together when DOM loads
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {

@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PocketGoals</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Header -->
@@ -16,6 +19,7 @@
                     <span class="streak-icon">🔥</span>
                     <span id="streak-counter">0 días</span>
                 </div>
+                <button class="settings-btn glass-btn" id="settings-btn" aria-label="Ajustes">⚙️</button>
             </div>
             <div class="balance-container">
                 <p class="balance-label">Saldo Total Virtual</p>
@@ -67,13 +71,16 @@
         <div class="new-goal-container glass-card">
             <h3 class="modal-title">Nueva Meta</h3>
             <div class="form-group">
-                <input type="text" id="goal-name" placeholder="Nombre (ej. Viaje, PS5)" class="glass-input" autocomplete="off">
+                <input type="text" id="goal-name" placeholder="Nombre (ej. Viaje, PS5)" class="glass-input"
+                    autocomplete="off">
             </div>
             <div class="form-group">
-                <input type="number" id="goal-target" placeholder="Objetivo total ($)" class="glass-input" autocomplete="off">
+                <input type="number" id="goal-target" placeholder="Objetivo total ($)" class="glass-input"
+                    autocomplete="off">
             </div>
             <div class="form-group">
-                <input type="text" id="goal-emoji" placeholder="Emoji representativo (ej. ✈️)" class="glass-input" autocomplete="off">
+                <input type="text" id="goal-emoji" placeholder="Emoji representativo (ej. ✈️)" class="glass-input"
+                    autocomplete="off">
             </div>
             <div class="modal-actions numpad-actions">
                 <button class="glass-btn secondary" id="cancel-goal">Cancelar</button>
@@ -82,6 +89,33 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div class="numpad-overlay" id="settings-modal">
+        <div class="settings-container glass-card">
+            <h3 class="modal-title">Ajustes & Cuentas</h3>
+
+            <div class="account-section">
+                <h4 class="section-subtitle">Cuenta Actual</h4>
+                <div class="account-controls">
+                    <select id="account-selector" class="glass-input account-select"></select>
+                    <button class="glass-btn secondary small-btn" id="new-account-btn"
+                        aria-label="Nueva Cuenta">+</button>
+                </div>
+            </div>
+
+            <div class="danger-section">
+                <h4 class="section-subtitle">Gestión de Datos</h4>
+                <button class="glass-btn primary danger full-width" id="delete-data-btn">🗑️ Borrar Datos
+                    Actuales</button>
+            </div>
+
+            <div class="modal-actions numpad-actions">
+                <button class="glass-btn secondary full-width" id="close-settings">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
+
 </html>
