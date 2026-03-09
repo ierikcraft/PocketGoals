@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PocketGoals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-header">
+            <div class="header-top">
+                <div class="streak">
+                    <span class="streak-icon">🔥</span>
+                    <span id="streak-counter">0 días</span>
+                </div>
+            </div>
+            <div class="balance-container">
+                <p class="balance-label">Saldo Total Virtual</p>
+                <h1 id="total-balance">$0</h1>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="goals-container" id="goals-list">
+            <!-- Cards will be dynamically injected here -->
+        </main>
+
+        <!-- Add Button -->
+        <button class="add-goal-btn glass-btn" id="add-goal-btn">
+            <span class="plus-icon">+</span> Nueva Meta
+        </button>
+    </div>
+
+    <!-- Numpad Modal -->
+    <div class="numpad-overlay" id="numpad-modal">
+        <div class="numpad-container glass-card">
+            <div class="numpad-header">
+                <h3 id="numpad-title">Añadir a la meta</h3>
+                <h2 id="numpad-display">$0</h2>
+            </div>
+            <div class="numpad-grid">
+                <button class="num-key glass-btn">1</button>
+                <button class="num-key glass-btn">2</button>
+                <button class="num-key glass-btn">3</button>
+                <button class="num-key glass-btn">4</button>
+                <button class="num-key glass-btn">5</button>
+                <button class="num-key glass-btn">6</button>
+                <button class="num-key glass-btn">7</button>
+                <button class="num-key glass-btn">8</button>
+                <button class="num-key glass-btn">9</button>
+                <button class="action-key glass-btn warning" id="num-clear">C</button>
+                <button class="num-key glass-btn">0</button>
+                <button class="action-key glass-btn warning" id="num-back">⌫</button>
+            </div>
+            <div class="numpad-actions">
+                <button class="glass-btn secondary" id="num-close">Cancelar</button>
+                <button class="glass-btn primary" id="num-confirm">Añadir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Goal Modal -->
+    <div class="numpad-overlay" id="new-goal-modal">
+        <div class="new-goal-container glass-card">
+            <h3 class="modal-title">Nueva Meta</h3>
+            <div class="form-group">
+                <input type="text" id="goal-name" placeholder="Nombre (ej. Viaje, PS5)" class="glass-input" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <input type="number" id="goal-target" placeholder="Objetivo total ($)" class="glass-input" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <input type="text" id="goal-emoji" placeholder="Emoji representativo (ej. ✈️)" class="glass-input" autocomplete="off">
+            </div>
+            <div class="modal-actions numpad-actions">
+                <button class="glass-btn secondary" id="cancel-goal">Cancelar</button>
+                <button class="glass-btn primary" id="save-goal">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
